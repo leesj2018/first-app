@@ -351,47 +351,53 @@ with tab3:
     
     yearly_trend = filtered_df.groupby('year').size().reset_index(name='incidents')
     
-    # Simple linear regression for prediction
-    from sklearn.linear_model import LinearRegression
-    
-    X = yearly_trend['year'].values.reshape(-1, 1)
-    y = yearly_trend['incidents'].values
-    
-    model = LinearRegression()
-    model.fit(X, y)
-    
-    # Predict next 2 years
-    future_years = np.array([[2025], [2026]])
-    predictions = model.predict(future_years)
-    
-    # Create prediction chart
-    extended_years = list(yearly_trend['year']) + [2025, 2026]
-    extended_incidents = list(yearly_trend['incidents']) + list(predictions)
-    
-    fig_pred = go.Figure()
-    fig_pred.add_trace(go.Scatter(
-        x=yearly_trend['year'],
-        y=yearly_trend['incidents'],
-        mode='lines+markers',
-        name='Historical Data',
-        line=dict(color='blue')
-    ))
-    fig_pred.add_trace(go.Scatter(
-        x=[2025, 2026],
-        y=predictions,
-        mode='lines+markers',
-        name='Prediction',
-        line=dict(color='red', dash='dash')
-    ))
-    fig_pred.update_layout(
-        title='Cybersecurity Incidents Trend Prediction',
-        xaxis_title='Year',
-        yaxis_title='Number of Incidents'
-    )
-    st.plotly_chart(fig_pred, use_container_width=True)
-    
-    st.info(f"Predicted incidents for 2025: {int(predictions[0]):,}")
-    st.info(f"Predicted incidents for 2026: {int(predictions[1]):,}")
+    # Simple linear regression without sklearn
+    if len(yearly_trend) > 1:
+        X = yearly_trend['year'].values
+        y = yearly_trend['incidents'].values
+        
+        # Calculate slope and intercept manually
+        n = len(X)
+        sum_x = np.sum(X)
+        sum_y = np.sum(y)
+        sum_xy = np.sum(X * y)
+        sum_x2 = np.sum(X * X)
+        
+        slope = (n * sum_xy - sum_x * sum_y) / (n * sum_x2 - sum_x * sum_x)
+        intercept = (sum_y - slope * sum_x) / n
+        
+        # Predict next 2 years
+        pred_2025 = slope * 2025 + intercept
+        pred_2026 = slope * 2026 + intercept
+        predictions = [pred_2025, pred_2026]
+        
+        # Create prediction chart
+        fig_pred = go.Figure()
+        fig_pred.add_trace(go.Scatter(
+            x=yearly_trend['year'],
+            y=yearly_trend['incidents'],
+            mode='lines+markers',
+            name='Historical Data',
+            line=dict(color='blue')
+        ))
+        fig_pred.add_trace(go.Scatter(
+            x=[2025, 2026],
+            y=predictions,
+            mode='lines+markers',
+            name='Prediction',
+            line=dict(color='red', dash='dash')
+        ))
+        fig_pred.update_layout(
+            title='Cybersecurity Incidents Trend Prediction',
+            xaxis_title='Year',
+            yaxis_title='Number of Incidents'
+        )
+        st.plotly_chart(fig_pred, use_container_width=True)
+        
+        st.info(f"Predicted incidents for 2025: {int(predictions[0]):,}")
+        st.info(f"Predicted incidents for 2026: {int(predictions[1]):,}")
+    else:
+        st.warning("Not enough data for trend prediction. Please select more years.")
 
 # Data table
 st.subheader("📊 Detailed Data")
